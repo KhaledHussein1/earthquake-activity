@@ -1,0 +1,77 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f7f7f7;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    padding: 0;
+    align-items: center;
+    justify-content: flex-start;  /* changed to flex-start to accommodate smaller screens */
+}
+
+.control-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    width: 90%;  /* Increased to 90% for better use of space */
+    max-width: 960px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-top: 20px;  /* Added top margin */
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+#earthquake-map {
+    width: 90%;  /* Increased width percentage */
+    max-width: 960px;
+    height: 80vh;  /* Changed to auto to adjust height dynamically */
+    aspect-ratio: 16 / 9;  /* Maintains aspect ratio */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+button {
+    background-color: #0056b3;
+    color: #ffffff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #003d82;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 800px) {
+    .control-bar, #earthquake-map {
+        width: 100%;  /* Full width on small screens */
+    }
+    .control-bar {
+        flex-direction: column;  /* Stack inputs vertically on small screens */
+    }
+    #earthquake-map {
+        height: 50vh;  /* Use 50% of viewport height */
+    }
+}
