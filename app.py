@@ -97,12 +97,16 @@ def generate_figure(data):
 
     fig.update_geos(
         visible=False,  # Hide the default basemap
-        showcountries=True,  # Show country borders
-        countrycolor="RebeccaPurple"  # Stylish color for country borders
     )
 
     fig.update_layout(
-        title=f"Global Earthquake Activity ({date_range})",
+        title={
+        'text': f"Global Earthquake Activity ({date_range})",
+        'y': 0.97,  # Position of the title. Adjust the y-coordinate as needed
+        'x': 0.5,  # Centers the title horizontally
+        'xanchor': 'center',  # Anchor the title at its center
+        'yanchor': 'top'  # Anchor the title from the top
+    },
         autosize=True,
         geo=dict(
             showland=True,  # Show land
@@ -116,7 +120,13 @@ def generate_figure(data):
     return fig
 
 app.layout = html.Div(className='container', children=[
-    html.H1("Global Earthquake Activity Visualizer", className='app-title'),
+    html.H1("Seismic Activity Visualizer", className='app-title'),
+
+    # Graph Container
+    html.Div(className='graph-container', children=[
+        dcc.Graph(id='earthquake-map', style={'height': '80vh', 'width': '80vw'})
+    ]),
+    # Controls Container
     html.Div(className='control-bar', children=[
         dcc.DatePickerRange(
             id='date-picker-range',
@@ -127,7 +137,17 @@ app.layout = html.Div(className='container', children=[
         html.Button('Export Data', id='export-button'),
         dcc.Download(id="download-data")
     ]),
-    dcc.Graph(id='earthquake-map', style={'width': '100%', 'height': '100%'})
+    html.Div(className='info-container', children=[
+     html.H2("About", className='info-title'),
+     html.H4("This tool visualizes global earthquake activity by utilizing data from the United States Geological Survey (USGS) API to provide real-time and historical earthquake information. Users can select a specific date range to view detailed earthquake events on an interactive map, which displays the locations, magnitudes, and additional details of seismic activities around the world. The application also offers the capability to export earthquake data for the selected date range into a CSV file for further analysis or record-keeping.", className='note'),
+     html.H2("Performance Recommendation for Users", className='info-title'),
+     html.H4("For the best experience when interacting with the map, it is advisable to choose a date range of no longer than one week. This ensures that the map loads quickly and remains responsive. However, if you need to visualize or export data for extensive research or personal use, you can select much longer periods, even spanning several years. Please be aware that processing large amounts of data for export may take some time.", className='note'),
+     html.H2("Exported Data Documentation", className='info-title'),
+     html.H4([
+    "You can export earthquake data in a formatted CSV file that includes columns such as 'id', 'time', 'mag', 'magType', 'place', 'longitude', 'latitude', 'depth', 'type', 'status', 'sig', 'net', 'rms', 'url'. For a detailed understanding of each of these columns, take a look at the ",
+    html.A('USGS website', href='https://earthquake.usgs.gov/data/comcat/data-eventterms.php#mag')
+], className='note')
+    ])
 ])
 
 @app.callback(

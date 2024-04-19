@@ -1,9 +1,67 @@
+.app-title {
+    font-family: 'Montserrat', sans-serif; /* Modern, geometric sans-serif font */
+    color: #FAFAFA; /* Light color for high contrast */
+    background: linear-gradient(145deg, 
+                                #8D8741 20%, 
+                                #659DBD 40%, 
+                                #DAAD86 60%, 
+                                #BC986A 80%);
+    /* A gradient that mimics sediment layers with varying earth tones */
+    padding: 20px 30px;
+    border-radius: 10px;
+    text-align: center;
+    margin: 30px auto;
+    max-width: 600px;
+    box-shadow: 0 6px 10px rgba(0,0,0,0.2); /* Subtle shadow for a 3D effect */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Text shadow for depth */
+    border: 2px solid #555; /* Dark border to frame the title */
+    transform: rotate(-1deg); /* Slightly rotated for a dynamic, off-kilter look */
+}
+
+.app-title:hover {
+    transform: rotate(1deg); /* Reverse rotation on hover for an interactive effect */
+    box-shadow: 0 8px 12px rgba(0,0,0,0.3); /* Enhanced shadow on hover */
+}
+
+
 body, html {
     height: 100%;
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
     background-color: #f7f7f7;
 }
+
+/* Styling for the info-container */
+.info-container {
+    background-color: #f8f9fa; /* Light grey background for subtle contrast */
+    border: 1px solid #dee2e6; /* Slight border to define the container */
+    border-radius: 10px; /* Rounded corners for a modern look */
+    padding: 20px; /* Spacing inside the container */
+    margin: 20px; /* Outer margin to separate the container from other page elements */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    margin-left: auto; /* Centering the container horizontally */
+    margin-right: auto;
+    height: auto;
+    width: 70vw;
+}
+
+/* Styling for headers within the info-container */
+.info-container .info-title {
+    color: #007592; /* A strong color for titles, matching the ocean color from the map */
+    margin-bottom: 10px; /* Space below the title */
+    padding-bottom: 5px; /* Small padding to give space below the text */
+    border-bottom: 2px solid #007592; /* A colored underline for emphasis */
+}
+
+/* Styling for text blocks within the info-container */
+.info-container .note {
+    color: #343a40; /* Dark grey for readable text */
+    font-size: 16px; /* Appropriate text size for readability */
+    line-height: 1.6; /* Line height for comfortable reading */
+    text-align: justify; /* Justified text for a neat appearance */
+    margin-top: 15px; /* Space above the text for visual separation */
+}
+
 
 .container {
     display: flex;
@@ -19,23 +77,27 @@ body, html {
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    width: 90%;  /* Increased to 90% for better use of space */
-    max-width: 960px;
+    width: 50%;  /* Increased to 90% for better use of space */
+    max-width: 480px;
     background-color: #ffffff;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     margin-top: 20px;  /* Added top margin */
     margin-bottom: 20px;
     animation: fadeIn 0.5s ease-out;
 }
 
+.graph-container {
+    margin: 0 auto; /* Centers the container */
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
 #earthquake-map {
-    width: 90%;  /* Increased width percentage */
-    max-width: 960px;
-    height: 80vh;  /* Changed to auto to adjust height dynamically */
-    aspect-ratio: 16 / 9;  /* Maintains aspect ratio */
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-radius: 8px;
+    width: 100%; /* Use full width of the container */
+    height: 500px; /* Fixed height for consistency */
+    aspect-ratio: 16 / 9; /* Maintains aspect ratio */
 }
 
 button {
@@ -65,7 +127,7 @@ button:hover {
 }
 
 @media (max-width: 800px) {
-    .control-bar, #earthquake-map {
+    .control-bar, #earthquake-map, .graph-container  {
         width: 100%;  /* Full width on small screens */
     }
     .control-bar {
