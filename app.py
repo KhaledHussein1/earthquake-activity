@@ -29,12 +29,30 @@ def get_data(start_date, end_date):
     # Parse date strings and ensure no time component issues
     start_datetime = datetime.strptime(start_date.split('T')[0], '%Y-%m-%d')
     end_datetime = datetime.strptime(end_date.split('T')[0], '%Y-%m-%d')
+
+    # Define projection to include only necessary fields
+    projection = {
+        '_id': 0,  # Exclude MongoDB's default '_id' field if not needed
+        'id': 1,
+        'properties.time': 1,
+        'properties.mag': 1,
+        'properties.magType': 1,
+        'properties.place': 1,
+        'properties.type': 1,
+        'properties.status': 1,
+        'properties.sig': 1,
+        'properties.net': 1,
+        'properties.rms': 1,
+        'properties.url': 1,
+        'geometry.coordinates': 1
+    }
+
     data = list(collection.find({
         'properties.time': {
             '$gte': start_datetime.timestamp() * 1000,
             '$lte': end_datetime.timestamp() * 1000
         }
-    }))
+    }, projection=projection))
     return data
 
 def convert_timestamp(milliseconds):
@@ -74,6 +92,7 @@ def export_data_to_csv(start_date, end_date):
     output.seek(0)  # Rewind the buffer
     return output.getvalue()
 
+
 def generate_figure(data, include_size=True):
     # Convert data lists to a DataFrame
     df = pd.DataFrame({
@@ -88,7 +107,7 @@ def generate_figure(data, include_size=True):
     # Linear Scaling
     # df['size'] = df['magnitude'].apply(lambda mag: max(1, mag * 2))
     
-    # Calculate sizes using a logarithmic scale for better visual representation
+    # Apply logarithmic scaling for size based on magnitude
     df['size'] = df['magnitude'].apply(lambda mag: max(1, 10 ** (0.5 * mag)) if pd.notnull(mag) else 1)
 
     # Capped Logarithmic Scaling
@@ -114,7 +133,7 @@ def generate_figure(data, include_size=True):
             'time': True,  # Show time in hover
             'size': False  # Optionally control if size is shown based on button toggle
         },  
-        projection="natural earth"  # More realistic earth projection
+        projection="natural earth",  # More realistic earth projection
     )
 
     fig.update_geos(

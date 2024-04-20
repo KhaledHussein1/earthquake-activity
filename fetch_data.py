@@ -18,6 +18,9 @@ client = MongoClient(database_url)
 db = client.earthquake_db
 collection = db.earthquakes
 
+# Ensure an index on the 'properties.time' field
+collection.create_index([("properties.time", 1)])  # 1 for ascending order
+
 def parse_date(date_str):
     """Attempt to parse the date with or without time and microseconds."""
     for fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d'):
