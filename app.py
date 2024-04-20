@@ -3,6 +3,7 @@ from dash import html, dcc, callback, Output, Input, State
 from pymongo import MongoClient
 import plotly.express as px
 from datetime import datetime, timezone, timedelta
+import pandas as pd
 from fetch_data import check_and_fetch_data
 import json
 import csv
@@ -16,13 +17,15 @@ with open('config.json') as config_file:
 
 database_url = config['database_url']
 
+# Creating a MongoDB connection pool
+client = MongoClient(database_url)
+db = client.earthquake_db
+collection = db.earthquakes
+
 def get_data(start_date, end_date):
     # Check and fetch data if not present
     check_and_fetch_data(start_date, end_date)  # Ensure data is up-to-date
 
-    client = MongoClient(database_url)
-    db = client.earthquake_db
-    collection = db.earthquakes
     # Parse date strings and ensure no time component issues
     start_datetime = datetime.strptime(start_date.split('T')[0], '%Y-%m-%d')
     end_datetime = datetime.strptime(end_date.split('T')[0], '%Y-%m-%d')
@@ -32,7 +35,6 @@ def get_data(start_date, end_date):
             '$lte': end_datetime.timestamp() * 1000
         }
     }))
-    client.close()
     return data
 
 def convert_timestamp(milliseconds):
@@ -72,26 +74,46 @@ def export_data_to_csv(start_date, end_date):
     output.seek(0)  # Rewind the buffer
     return output.getvalue()
 
-def generate_figure(data):
-    lons = [d['geometry']['coordinates'][0] for d in data]
-    lats = [d['geometry']['coordinates'][1] for d in data]
-    mags = [d['properties']['mag'] if 'mag' in d['properties'] else 0 for d in data]
-    
-    # Handling None values in magnitudes
-    sizes = [max(1, (mag if mag is not None else 0) * 2) for mag in mags]
-    
-    dates = [datetime.fromtimestamp(d['properties']['time'] / 1000).strftime('%Y-%m-%d')
-             for d in data if 'time' in d['properties'] and isinstance(d['properties']['time'], (int, float))]
-    date_range = f"{min(dates)} to {max(dates)}" if dates else "No date range available"
+def generate_figure(data, include_size=True):
+    # Convert data lists to a DataFrame
+    df = pd.DataFrame({
+        'lon': [d['geometry']['coordinates'][0] for d in data],
+        'lat': [d['geometry']['coordinates'][1] for d in data],
+        'magnitude': [d['properties']['mag'] if 'mag' in d['properties'] else 0 for d in data],
+        'time': [datetime.fromtimestamp(d['properties']['time'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+                 for d in data if 'time' in d['properties'] and isinstance(d['properties']['time'], (int, float))],
+        'place':  [d['properties']['place'] for d in data],
+    })
 
-    # Use Plotly Express to create the figure
+    # Linear Scaling
+    # df['size'] = df['magnitude'].apply(lambda mag: max(1, mag * 2))
+    
+    # Calculate sizes using a logarithmic scale for better visual representation
+    df['size'] = df['magnitude'].apply(lambda mag: max(1, 10 ** (0.5 * mag)) if pd.notnull(mag) else 1)
+
+    # Capped Logarithmic Scaling
+    # df['size'] = df['magnitude'].apply(lambda mag: min(50, max(1, 10 ** (0.5 * mag))))
+
+    date_range = f"{min(df['time'])} to {max(df['time'])}" if not df['time'].empty else "No date range available"
+
+    if include_size:
+        size = 'size'  # Use size from DataFrame
+    else:
+        size = None 
+    # Use Plotly Express to create the figure using DataFrame
     fig = px.scatter_geo(
-        lon=lons, 
-        lat=lats, 
-        size=sizes,  # Updated sizes list with None handling
-        color=mags,  # Use magnitude as color
-        color_continuous_scale=px.colors.sequential.Plasma,  # Color scale
-        hover_name=["Magnitude: " + str(mag) for mag in mags],  # Hover text
+        df,
+        lon='lon',
+        lat='lat',
+        size=size,  # Use size from DataFrame
+        color='magnitude',  # Use magnitude as color
+        color_continuous_scale=px.colors.sequential.Viridis,  # Inferno, Magma, Plasma, Viridis, Cividis, Jet, Greys
+       hover_name=df['place'],  # Use place as hover name
+        hover_data={
+            'magnitude': True,  # Show magnitude in hover
+            'time': True,  # Show time in hover
+            'size': False  # Optionally control if size is shown based on button toggle
+        },  
         projection="natural earth"  # More realistic earth projection
     )
 
@@ -122,10 +144,6 @@ def generate_figure(data):
 app.layout = html.Div(className='container', children=[
     html.H1("Seismic Activity Visualizer", className='app-title'),
 
-    # Graph Container
-    html.Div(className='graph-container', children=[
-        dcc.Graph(id='earthquake-map', style={'height': '80vh', 'width': '80vw'})
-    ]),
     # Controls Container
     html.Div(className='control-bar', children=[
         dcc.DatePickerRange(
@@ -135,8 +153,16 @@ app.layout = html.Div(className='container', children=[
             display_format='YYYY-MM-DD'
         ),
         html.Button('Export Data', id='export-button'),
-        dcc.Download(id="download-data")
+        dcc.Download(id="download-data"),
+        html.Button('Minimize Visuals', id='minimize-visuals-button', n_clicks=0),
+
     ]),
+
+    # Graph Container
+    html.Div(className='graph-container', children=[
+        dcc.Graph(id='earthquake-map', style={'height': '80vh', 'width': '80vw'})
+    ]),
+    
     html.Div(className='info-container', children=[
      html.H2("About", className='info-title'),
      html.H4("This tool visualizes global earthquake activity by utilizing data from the United States Geological Survey (USGS) API to provide real-time and historical earthquake information. Users can select a specific date range to view detailed earthquake events on an interactive map, which displays the locations, magnitudes, and additional details of seismic activities around the world. The application also offers the capability to export earthquake data for the selected date range into a CSV file for further analysis or record-keeping.", className='note'),
@@ -153,11 +179,14 @@ app.layout = html.Div(className='container', children=[
 @app.callback(
     Output('earthquake-map', 'figure'),
     [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date')]
+     Input('date-picker-range', 'end_date'),
+     Input('minimize-visuals-button', 'n_clicks')],
 )
-def update_map(start_date, end_date):
+def update_map(start_date, end_date, n_clicks):
     data = get_data(start_date, end_date)
-    return generate_figure(data)
+    include_size = n_clicks % 2 == 0  # Toggle size on even number of clicks
+    return generate_figure(data, include_size=include_size)
+
 
 
 @app.callback(

@@ -14,6 +14,10 @@ with open('config.json', 'r') as file:
 base_url = config.get('usgs_base_url', 'default_base_url')
 database_url = config['database_url']
 
+client = MongoClient(database_url)
+db = client.earthquake_db
+collection = db.earthquakes
+
 def parse_date(date_str):
     """Attempt to parse the date with or without time and microseconds."""
     for fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d'):
@@ -38,26 +42,22 @@ def fetch_earthquake_data(start_date, end_date):
 
 def store_data(data):
     try:
-        client = MongoClient(database_url)
-        db = client.earthquake_db
-        collection = db.earthquakes
-        collection.create_index([("id", 1)], unique=True)
         if data:
-            result = collection.insert_many(data, ordered=False)
-            logging.info(f"Inserted {len(result.inserted_ids)} new records")
+            for feature in data:
+                collection.update_one(
+                    {'id': feature['id']},  # Condition to find the document
+                    {'$setOnInsert': feature},  # Set fields only if it's an insert operation
+                    upsert=True  # Create a new document if one doesn't exist
+                )
+            logging.info("Data upserted successfully.")
         else:
             logging.info("No data to insert")
     except Exception as e:
         logging.error(f"Error storing data: {e}")
-    finally:
-        client.close()
+
 
 def check_and_fetch_data(start_date, end_date):
     try:
-        client = MongoClient(database_url)
-        db = client.earthquake_db
-        collection = db.earthquakes
-
         start_datetime = parse_date(start_date)
         end_datetime = parse_date(end_date)
         current_date = start_datetime
@@ -80,8 +80,6 @@ def check_and_fetch_data(start_date, end_date):
 
     except Exception as e:
         logging.error(f"Error in check_and_fetch_data: {e}")
-    finally:
-        client.close()
 
 if __name__ == '__main__':
     # Example to check and fetch data

@@ -77,8 +77,8 @@ body, html {
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    width: 50%;  /* Increased to 90% for better use of space */
-    max-width: 480px;
+    width: 80%;  /* Increased to 90% for better use of space */
+    max-width: 680px;
     background-color: #ffffff;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
