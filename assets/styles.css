@@ -23,12 +23,45 @@
     box-shadow: 0 8px 12px rgba(0,0,0,0.3); /* Enhanced shadow on hover */
 }
 
-
 body, html {
     height: 100%;
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
     background-color: #f7f7f7;
+    background-image: linear-gradient(
+        135deg,  /* Sets the gradient to move diagonally */
+        #4A7B9D 0%,  /* Oceanic plate: deep sea blue */
+        #C9CCD5 10%,  /* Sedimentary layer: soft grey */
+        #B1A296 50%,  /* Continental plate: earthy tan */
+        #8D8741 70%,  /* Mantle layer: olive green */
+        #4A7B9D 100%  /* Repeat oceanic plate color for seamless transition */
+    );
+    background-size: 200% 200%;  /* Larger background size for smooth animation */
+}
+
+/* Styling for the Dropdown Menu */
+#scaling-dropdown {
+    width: 26%; /* Ensure the dropdown takes the full width of its container */
+    color: #0056b3; /* Font color */
+    background-color: #f8f9fa; /* Light grey background to match the info-container */
+    border: 2px solid #007592; /* Border color to complement the ocean color used in maps */
+    padding: 10px 15px; /* Padding for better text visibility and comfort */
+    border-radius: 5px; /* Rounded corners for a smoother look */
+    font-size: 16px; /* Font size for better readability */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow for a soft 3D effect */
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out; /* Smooth transition for interactive elements */
+}
+
+#scaling-dropdown:hover {
+    background-color: #e9ecef; /* Slightly lighter background on hover */
+    border-color: #0056b3; /* Change border color on hover for emphasis */
+}
+
+/* Focus State for Accessibility */
+#scaling-dropdown:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 0 3px rgba(0, 117, 146, 0.5); /* Custom focus style to match the theme */
+    background-color: #e9ecef; /* Lighter background to indicate focus */
 }
 
 /* Styling for the info-container */

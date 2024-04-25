@@ -1,7 +1,7 @@
-# Global Earthquake Activity Dashboard
+# Global Earthquake Activity
 
 ## Overview
-The Global Earthquake Activity Dashboard is a web application designed to visualize real-time data on earthquake activities around the globe. It uses data from the USGS Earthquake API to display events on an interactive map, providing insights into earthquake magnitudes and locations. This dashboard serves as a tool for researchers, educators, and the public to observe and analyze earthquake data dynamically.
+This is a web application designed to visualize real-time data on earthquake activities around the globe. It uses data from the USGS Earthquake API to display events on an interactive map, providing insights into earthquake magnitudes and locations. This dashboard serves as a tool for researchers, educators, and the public to observe and analyze earthquake data dynamically.
 
 ## Quick Setup
 

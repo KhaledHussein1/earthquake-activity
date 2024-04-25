@@ -5,17 +5,14 @@ import plotly.express as px
 from datetime import datetime, timezone, timedelta
 import pandas as pd
 from fetch_data import check_and_fetch_data
-import json
 import csv
-import io
+import io, os
 
 app = dash.Dash(__name__)
+app.title = 'Earthquake Watch'
 
-# Load configuration from a JSON file
-with open('config.json') as config_file:
-  config = json.load(config_file)
-
-database_url = config['database_url']
+# Load configuration directly from environment variables
+database_url = os.getenv('DATABASE_URL')
 
 # Creating a MongoDB connection pool
 client = MongoClient(database_url)
@@ -93,7 +90,7 @@ def export_data_to_csv(start_date, end_date):
     return output.getvalue()
 
 
-def generate_figure(data, include_size=True):
+def generate_figure(data, include_size=True, scaling='none'):
     # Convert data lists to a DataFrame
     df = pd.DataFrame({
         'lon': [d['geometry']['coordinates'][0] for d in data],
@@ -104,14 +101,13 @@ def generate_figure(data, include_size=True):
         'place':  [d['properties']['place'] for d in data],
     })
 
-    # Linear Scaling
-    # df['size'] = df['magnitude'].apply(lambda mag: max(1, mag * 2))
-    
-    # Apply logarithmic scaling for size based on magnitude
-    df['size'] = df['magnitude'].apply(lambda mag: max(1, 10 ** (0.5 * mag)) if pd.notnull(mag) else 1)
-
-    # Capped Logarithmic Scaling
-    # df['size'] = df['magnitude'].apply(lambda mag: min(50, max(1, 10 ** (0.5 * mag))))
+    # Apply different scaling based on the scaling parameter
+    if scaling == 'linear':
+        df['size'] = df['magnitude'].apply(lambda mag: max(1, mag * 2))
+    elif scaling == 'logarithmic':
+        df['size'] = df['magnitude'].apply(lambda mag: max(1, 10 ** (0.5 * mag)))
+    elif scaling == 'none':
+        df['size'] = 1  # Or simply don't apply size at all in the visualization
 
     date_range = f"{min(df['time'])} to {max(df['time'])}" if not df['time'].empty else "No date range available"
 
@@ -127,7 +123,7 @@ def generate_figure(data, include_size=True):
         size=size,  # Use size from DataFrame
         color='magnitude',  # Use magnitude as color
         color_continuous_scale=px.colors.sequential.Viridis,  # Inferno, Magma, Plasma, Viridis, Cividis, Jet, Greys
-       hover_name=df['place'],  # Use place as hover name
+        hover_name=df['place'],  # Use place as hover name
         hover_data={
             'magnitude': True,  # Show magnitude in hover
             'time': True,  # Show time in hover
@@ -173,8 +169,17 @@ app.layout = html.Div(className='container', children=[
         ),
         html.Button('Export Data', id='export-button'),
         dcc.Download(id="download-data"),
-        html.Button('Minimize Visuals', id='minimize-visuals-button', n_clicks=0),
-
+        dcc.Dropdown(
+    id='scaling-dropdown',
+    options=[
+        {'label': 'Minimal', 'value': 'none'},
+        {'label': 'Linear Scaling', 'value': 'linear'},
+        {'label': 'Logarithmic Scaling', 'value': 'logarithmic'}
+    ],
+    value='none',  # Set default to no scaling
+    clearable=False,
+    searchable=False,
+        ),
     ]),
 
     # Graph Container
@@ -184,9 +189,9 @@ app.layout = html.Div(className='container', children=[
     
     html.Div(className='info-container', children=[
      html.H2("About", className='info-title'),
-     html.H4("This tool visualizes global earthquake activity by utilizing data from the United States Geological Survey (USGS) API to provide real-time and historical earthquake information. Users can select a specific date range to view detailed earthquake events on an interactive map, which displays the locations, magnitudes, and additional details of seismic activities around the world. The application also offers the capability to export earthquake data for the selected date range into a CSV file for further analysis or record-keeping.", className='note'),
+     html.H4("This tool visualizes global earthquake activity by utilizing data from the United States Geological Survey (USGS) API to provide real-time and historical earthquake information. Users can select a specific date range to view detailed earthquake events on an interactive map, which displays the locations, magnitudes, and additional details of seismic activities around the world. Users can tailor the visualization experience by adjusting the scaling of earthquake magnitudes. The application also offers the capability to export earthquake data for the selected date range into a CSV file for further analysis or record-keeping.", className='note'),
      html.H2("Performance Recommendation for Users", className='info-title'),
-     html.H4("For the best experience when interacting with the map, it is advisable to choose a date range of no longer than one week. This ensures that the map loads quickly and remains responsive. However, if you need to visualize or export data for extensive research or personal use, you can select much longer periods, even spanning several years. Please be aware that processing large amounts of data for export may take some time.", className='note'),
+     html.H4("For the best experience when interacting with the map, it is advisable to choose a date range of no longer than one week. This ensures that the map loads quickly and remains responsive. However, if you need to visualize or export data for extensive research or personal use, you can select much longer periods, even spanning several years. Please be aware that processing large amounts of data for export may take some time. Additionally, using the 'Minimal' scaling option is recommended for rendering more data at once, as it provides a streamlined visualization that prioritizes performance over detailed visual effects.", className='note'),
      html.H2("Exported Data Documentation", className='info-title'),
      html.H4([
     "You can export earthquake data in a formatted CSV file that includes columns such as 'id', 'time', 'mag', 'magType', 'place', 'longitude', 'latitude', 'depth', 'type', 'status', 'sig', 'net', 'rms', 'url'. For a detailed understanding of each of these columns, take a look at the ",
@@ -199,12 +204,18 @@ app.layout = html.Div(className='container', children=[
     Output('earthquake-map', 'figure'),
     [Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date'),
-     Input('minimize-visuals-button', 'n_clicks')],
+     Input('scaling-dropdown', 'value')],  # Change this from minimize-visuals-button to scaling-dropdown
 )
-def update_map(start_date, end_date, n_clicks):
+def update_map(start_date, end_date, scaling):
     data = get_data(start_date, end_date)
-    include_size = n_clicks % 2 == 0  # Toggle size on even number of clicks
-    return generate_figure(data, include_size=include_size)
+    # Adjust scaling based on dropdown selection
+    if scaling == 'linear':
+        return generate_figure(data, include_size=True, scaling='linear')
+    elif scaling == 'logarithmic':
+        return generate_figure(data, include_size=True, scaling='logarithmic')
+    else:
+        return generate_figure(data, include_size=False)  # Minimal visual means no size scaling
+
 
 
 
@@ -221,4 +232,4 @@ def export_button_click(n_clicks, start_date, end_date):
         return dcc.send_string(csv_string, "earthquake_data.csv")
 
 if __name__ == '__main__':
-    app.run_server(debug=True, dev_tools_ui=True)
+    app.run_server(host='0.0.0.0', port=8050, debug=False, dev_tools_ui=False)

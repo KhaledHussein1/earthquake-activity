@@ -1,18 +1,14 @@
 import requests
-import json
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-import logging
+import logging, os
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Load configuration
-with open('config.json', 'r') as file:
-    config = json.load(file)
-
-base_url = config.get('usgs_base_url', 'default_base_url')
-database_url = config['database_url']
+# Load configuration directly from environment variables
+database_url = os.getenv('DATABASE_URL')
+base_url = os.getenv('USGS_BASE_URL')
 
 client = MongoClient(database_url)
 db = client.earthquake_db
