@@ -1,18 +1,23 @@
 import dash
-from dash import html, dcc, callback, Output, Input, State
+from dash import html, dcc, Output, Input, State
 from pymongo import MongoClient
 import plotly.express as px
 from datetime import datetime, timezone, timedelta
 import pandas as pd
 from fetch_data import check_and_fetch_data
-import csv
-import io, os
+import csv, io, json
 
 app = dash.Dash(__name__)
 app.title = 'Earthquake Watch'
 
-# Load configuration directly from environment variables
-database_url = os.getenv('DATABASE_URL')
+config_file_path = 'config.json'
+
+# Load the configuration from JSON file
+with open(config_file_path, 'r') as file:
+    config = json.load(file)
+
+# Directly assign variables
+database_url = config['database_url']
 
 # Creating a MongoDB connection pool
 client = MongoClient(database_url)

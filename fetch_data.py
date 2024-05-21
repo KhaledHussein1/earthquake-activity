@@ -1,14 +1,20 @@
 import requests
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-import logging, os
+import logging, json
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Load configuration directly from environment variables
-database_url = os.getenv('DATABASE_URL')
-base_url = os.getenv('USGS_BASE_URL')
+config_file_path = 'config.json'
+
+# Load the configuration from JSON file
+with open(config_file_path, 'r') as file:
+    config = json.load(file)
+
+# Directly assign variables
+database_url = config['database_url']
+base_url = config['usgs_base_url']
 
 client = MongoClient(database_url)
 db = client.earthquake_db
@@ -82,5 +88,5 @@ def check_and_fetch_data(start_date, end_date):
 
 if __name__ == '__main__':
     # Example to check and fetch data
-    # check_and_fetch_data('2024-04-01', '2024-04-02')
+    #check_and_fetch_data('2023-01-01', '2024-04-26')
     pass
