@@ -6,6 +6,8 @@ from datetime import datetime, timezone, timedelta
 import pandas as pd
 from fetch_data import check_and_fetch_data
 import csv, io, json
+from dash.exceptions import PreventUpdate
+
 
 app = dash.Dash(__name__)
 app.title = 'Earthquake Watch'
@@ -24,13 +26,14 @@ client = MongoClient(database_url)
 db = client.earthquake_db
 collection = db.earthquakes
 
-def get_data(start_date, end_date):
+def get_data(selected_date):
     # Check and fetch data if not present
-    check_and_fetch_data(start_date, end_date)  # Ensure data is up-to-date
+    check_and_fetch_data(selected_date, selected_date)  
 
-    # Parse date strings and ensure no time component issues
-    start_datetime = datetime.strptime(start_date.split('T')[0], '%Y-%m-%d')
-    end_datetime = datetime.strptime(end_date.split('T')[0], '%Y-%m-%d')
+    # Parse date string and create a full day range
+    selected_datetime = datetime.strptime(selected_date, '%Y-%m-%d')
+    start_datetime = datetime(selected_datetime.year, selected_datetime.month, selected_datetime.day, 0, 0, 0)
+    end_datetime = datetime(selected_datetime.year, selected_datetime.month, selected_datetime.day, 23, 59, 59)
 
     # Define projection to include only necessary fields
     projection = {
@@ -60,9 +63,8 @@ def get_data(start_date, end_date):
 def convert_timestamp(milliseconds):
     return datetime.fromtimestamp(milliseconds / 1000, timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-def export_data_to_csv(start_date, end_date):
-    # Ensure data is available in the database
-    data = get_data(start_date, end_date)
+def export_data_to_csv(data):
+    data = get_data(data)
 
     # Define the fields to export
     fields = [
@@ -74,6 +76,7 @@ def export_data_to_csv(start_date, end_date):
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields)
     writer.writeheader()
+    
     for feature in data:
         writer.writerow({
             'id': feature.get('id'),
@@ -166,10 +169,9 @@ app.layout = html.Div(className='container', children=[
 
     # Controls Container
     html.Div(className='control-bar', children=[
-        dcc.DatePickerRange(
-            id='date-picker-range',
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+        dcc.DatePickerSingle(
+            id='date-picker-single',
+            date=datetime.now().date(),
             display_format='YYYY-MM-DD'
         ),
         html.Button('Export Data', id='export-button'),
@@ -207,12 +209,13 @@ app.layout = html.Div(className='container', children=[
 
 @app.callback(
     Output('earthquake-map', 'figure'),
-    [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
+    [Input('date-picker-single', 'date'),
      Input('scaling-dropdown', 'value')],  # Change this from minimize-visuals-button to scaling-dropdown
 )
-def update_map(start_date, end_date, scaling):
-    data = get_data(start_date, end_date)
+def update_map(selected_date, scaling):
+    if not selected_date:
+        raise PreventUpdate
+    data = get_data(selected_date)
     # Adjust scaling based on dropdown selection
     if scaling == 'linear':
         return generate_figure(data, include_size=True, scaling='linear')
@@ -227,14 +230,13 @@ def update_map(start_date, end_date, scaling):
 @app.callback(
     Output('download-data', 'data'),
     Input('export-button', 'n_clicks'),
-    State('date-picker-range', 'start_date'),
-    State('date-picker-range', 'end_date'),
+    State('date-picker-single', 'date'),
     prevent_initial_call=True
 )
-def export_button_click(n_clicks, start_date, end_date):
+def export_button_click(n_clicks, selected_date):
     if n_clicks is not None:
-        csv_string = export_data_to_csv(start_date, end_date)
+        csv_string = export_data_to_csv(selected_date)
         return dcc.send_string(csv_string, "earthquake_data.csv")
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=8050, debug=False, dev_tools_ui=False)
+    app.run_server( port=8050, debug=True, dev_tools_ui=True)
