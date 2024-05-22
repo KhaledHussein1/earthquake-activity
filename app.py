@@ -2,14 +2,15 @@ import dash
 from dash import html, dcc, Output, Input, State
 from pymongo import MongoClient
 import plotly.express as px
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import pandas as pd
 from fetch_data import check_and_fetch_data
 import csv, io, json
 from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
 
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.JOURNAL])
 app.title = 'Earthquake Watch'
 
 config_file_path = 'config.json'
@@ -164,6 +165,117 @@ def generate_figure(data, include_size=True, scaling='none'):
     )
     return fig
 
+controls = dbc.Row([
+    dbc.Col(
+        dbc.Card(
+            dbc.CardBody([
+                dbc.Button('Export Data', id='export-button', color='primary', className='w-100')
+            ]),
+            className="shadow-sm"
+        ),
+        width=3, md=3
+    ),
+    dcc.Download(id="download-data"),
+    dbc.Col(
+        dbc.Card(
+            dbc.CardBody([
+                dcc.DatePickerSingle(
+                    id='date-picker-single',
+                    date=datetime.now().date(),
+                    display_format='YYYY-MM-DD',
+                )
+            ],
+            style={'padding': '10px', 'textAlign': 'center'},),
+        className='center-content h-100',
+        ),
+        width=3, md=2
+    ),
+    dbc.Col(
+        dbc.Card(
+            dbc.CardBody([
+                dbc.Select(
+                    id='scaling-dropdown',
+                    options=[
+                        {'label': 'Minimal', 'value': 'none'},
+                        {'label': 'Linear Scaling', 'value': 'linear'},
+                        {'label': 'Logarithmic Scaling', 'value': 'logarithmic'}
+                    ],
+                    value='none',
+                    className='w-100'
+                )
+            ]),
+            className="shadow-sm"
+        ),
+        width=3, md=3
+    ),
+    dbc.Col(
+        dbc.Card(
+            dbc.CardBody([
+                dbc.Button("About", id="open-offcanvas", n_clicks=0, className='w-100')
+            ]),
+            className="shadow-sm"
+        ),
+        width=3, md=3
+    )
+], className="mb-3", justify="center")  # Ensuring the row is centered
+
+# Offcanvas placed outside the controls Row for proper layout
+offcanvas = dbc.Offcanvas(
+    [
+        html.P("Welcome to the Seismic Activity Visualizer! This interactive tool uses data from the United States Geological Survey (USGS) API to bring you real-time and historical insights into global earthquake activity."),
+        html.P("Here’s how you can engage with the visualizer:"),
+        html.Ul([
+            html.Li("Select a Specific Date: Choose a particular day to explore detailed seismic events. The interactive map will display locations, magnitudes, and more about the earthquakes that occurred on that day."),
+            html.Li("Adjust the View: Customize how you view earthquake data by adjusting the scaling of earthquake magnitudes through our user-friendly options."),
+            html.Li("Export Data: Interested in a deeper analysis or need to keep records? You can export the earthquake data for the chosen date into a CSV file at your convenience.")
+        ]),
+        html.P("Dive in and tailor your experience as you explore the dynamics of Earth's seismic activities right at your fingertips!"),
+    ],
+    id="offcanvas",
+    title="Hey There!",
+    is_open=False,
+)
+
+
+graph_container = dbc.Card(
+    dbc.CardBody([
+        dcc.Graph(id='earthquake-map', style={'height': '80vh'})
+    ]),
+    className="mb-3 shadow-sm p-3 bg-white rounded"
+)
+
+info_container = dbc.Card(
+    dbc.CardBody([
+        html.H2("About", className='info-title mb-4'),
+        html.P("This tool visualizes global earthquake activity by utilizing data from the USGS API. Users can select a date to view detailed seismic activities.", className='mb-3'),
+        html.P("For the best experience, it is advisable to choose a date range of no longer than one week. This ensures that the map loads quickly and remains responsive.", className='mb-3'),
+        html.H4("Exported Data Documentation:", className='mb-3'),
+        html.P("Data includes ID, time, magnitude, and location among other fields. For a detailed understanding, visit the USGS website.", className='mb-3'),
+        dbc.Button("Learn More", color="info", href="https://earthquake.usgs.gov/data/comcat/data-eventterms.php#mag", external_link=True)
+    ]),
+    className="mb-3 shadow-sm p-3 bg-white rounded"
+)
+
+
+app.layout = dbc.Container([
+    dbc.Row(dbc.Col(html.H1("Seismic Activity Visualizer", className='text-center mb-4'))),
+    dbc.Row(dbc.Col(controls)),  # Ensure this variable matches your definition
+    dbc.Row(dbc.Col(offcanvas, style={"position": "fixed", "top": 0, "right": 0})),
+    dbc.Row(dbc.Col(graph_container)),  # Ensure graph_container is defined similarly using dbc components
+    dbc.Row(dbc.Col(info_container)),  # Ensure info_container is adapted similarly
+], fluid=True)
+
+@app.callback(
+    Output("offcanvas", "is_open"),
+    Input("open-offcanvas", "n_clicks"),
+    [State("offcanvas", "is_open")],
+)
+def toggle_offcanvas(n1, is_open):
+    if n1:
+        return not is_open
+    return is_open
+
+'''
 app.layout = html.Div(className='container', children=[
     html.H1("Seismic Activity Visualizer", className='app-title'),
 
@@ -206,7 +318,7 @@ app.layout = html.Div(className='container', children=[
 ], className='note')
     ])
 ])
-
+'''
 @app.callback(
     Output('earthquake-map', 'figure'),
     [Input('date-picker-single', 'date'),
