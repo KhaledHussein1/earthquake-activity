@@ -12,7 +12,7 @@ This is a web application designed to visualize real-time data on earthquake act
    - Run `pip install -r requirements.txt` to install the required Python libraries.
 
 3. **Configuration**:
-   - Replace the placeholders in `config.json` with the appropriate MongoDB and USGS API URLs.
+   - Create a `config.json` file and add urls for MongoDB and USGS API as the environment variables.
 
 4. **Running the Application**:
    - Launch the dashboard by running `python app.py`.
