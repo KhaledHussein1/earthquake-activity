@@ -8,9 +8,9 @@ from fetch_data import check_and_fetch_data
 import csv, io, json
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+from dash.dash_table import DataTable
 
-
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.JOURNAL])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB])
 app.title = 'Earthquake Watch'
 
 config_file_path = 'config.json'
@@ -244,17 +244,50 @@ graph_container = dbc.Card(
     className="mb-3 shadow-sm p-3 bg-white rounded"
 )
 
+data_table_container = dbc.Card(
+    dbc.CardBody([
+        DataTable(
+            id='earthquake-data-table',
+            columns=[
+                {"name": i, "id": i} for i in ['time', 'magnitude', 'place', 'longitude', 'latitude', 'type', 'status', 'url']
+            ],
+            data=[],  # Initialized as empty
+            style_table={'height': '400px', 'overflowY': 'auto'},
+            filter_action='none',  # Enables filtering
+            sort_action='native',  # Enables sorting
+            sort_mode='multi',
+            column_selectable=False,
+            row_selectable= False,
+            page_action="native",
+            page_current=0,
+            page_size=10,
+        )
+    ]),
+    className="mb-3 shadow-sm p-3 bg-white rounded"
+)
+
+
 info_container = dbc.Card(
     dbc.CardBody([
-        html.H2("About", className='info-title mb-4'),
-        html.P("This tool visualizes global earthquake activity by utilizing data from the USGS API. Users can select a date to view detailed seismic activities.", className='mb-3'),
-        html.P("For the best experience, it is advisable to choose a date range of no longer than one week. This ensures that the map loads quickly and remains responsive.", className='mb-3'),
         html.H4("Exported Data Documentation:", className='mb-3'),
-        html.P("Data includes ID, time, magnitude, and location among other fields. For a detailed understanding, visit the USGS website.", className='mb-3'),
+        html.P([
+            "This dashboard utilizes data sourced from the ",
+            html.A("ANSS Comprehensive Earthquake Catalog (ComCat)", href="https://earthquake.usgs.gov/data/comcat/", target="_blank"),
+            ", which includes various earthquake source parameters and products produced by contributing seismic networks."
+        ], className='mb-3'),
+        html.P([
+            "The ComCat database provides a comprehensive record of earthquake data globally, offering parameters such as hypocenters, magnitudes, and seismic phase data. It also includes derived products like moment tensor solutions and ShakeMaps."
+        ], className='mb-3'),
+        html.P([
+            "For detailed information on the data, definitions, and formats available, as well as guidelines on how to access and utilize these resources effectively, please refer to the ",
+            html.A("ComCat Documentation", href="https://earthquake.usgs.gov/data/comcat/", target="_blank"),
+            "."
+        ], className='mb-3'),
         dbc.Button("Learn More", color="info", href="https://earthquake.usgs.gov/data/comcat/data-eventterms.php#mag", external_link=True)
     ]),
     className="mb-3 shadow-sm p-3 bg-white rounded"
 )
+
 
 
 app.layout = dbc.Container([
@@ -262,6 +295,7 @@ app.layout = dbc.Container([
     dbc.Row(dbc.Col(controls)),  # Ensure this variable matches your definition
     dbc.Row(dbc.Col(offcanvas, style={"position": "fixed", "top": 0, "right": 0})),
     dbc.Row(dbc.Col(graph_container)),  # Ensure graph_container is defined similarly using dbc components
+    dbc.Row(dbc.Col(data_table_container)), 
     dbc.Row(dbc.Col(info_container)),  # Ensure info_container is adapted similarly
 ], fluid=True)
 
@@ -275,50 +309,6 @@ def toggle_offcanvas(n1, is_open):
         return not is_open
     return is_open
 
-'''
-app.layout = html.Div(className='container', children=[
-    html.H1("Seismic Activity Visualizer", className='app-title'),
-
-    # Controls Container
-    html.Div(className='control-bar', children=[
-        dcc.DatePickerSingle(
-            id='date-picker-single',
-            date=datetime.now().date(),
-            display_format='YYYY-MM-DD'
-        ),
-        html.Button('Export Data', id='export-button'),
-        dcc.Download(id="download-data"),
-        dcc.Dropdown(
-    id='scaling-dropdown',
-    options=[
-        {'label': 'Minimal', 'value': 'none'},
-        {'label': 'Linear Scaling', 'value': 'linear'},
-        {'label': 'Logarithmic Scaling', 'value': 'logarithmic'}
-    ],
-    value='none',  # Set default to no scaling
-    clearable=False,
-    searchable=False,
-        ),
-    ]),
-
-    # Graph Container
-    html.Div(className='graph-container', children=[
-        dcc.Graph(id='earthquake-map', style={'height': '80vh', 'width': '80vw'})
-    ]),
-    
-    html.Div(className='info-container', children=[
-     html.H2("About", className='info-title'),
-     html.H4("This tool visualizes global earthquake activity by utilizing data from the United States Geological Survey (USGS) API to provide real-time and historical earthquake information. Users can select a specific date range to view detailed earthquake events on an interactive map, which displays the locations, magnitudes, and additional details of seismic activities around the world. Users can tailor the visualization experience by adjusting the scaling of earthquake magnitudes. The application also offers the capability to export earthquake data for the selected date range into a CSV file for further analysis or record-keeping.", className='note'),
-     html.H2("Performance Recommendation for Users", className='info-title'),
-     html.H4("For the best experience when interacting with the map, it is advisable to choose a date range of no longer than one week. This ensures that the map loads quickly and remains responsive. However, if you need to visualize or export data for extensive research or personal use, you can select much longer periods, even spanning several years. Please be aware that processing large amounts of data for export may take some time. Additionally, using the 'Minimal' scaling option is recommended for rendering more data at once, as it provides a streamlined visualization that prioritizes performance over detailed visual effects.", className='note'),
-     html.H2("Exported Data Documentation", className='info-title'),
-     html.H4([
-    "You can export earthquake data in a formatted CSV file that includes columns such as 'id', 'time', 'mag', 'magType', 'place', 'longitude', 'latitude', 'depth', 'type', 'status', 'sig', 'net', 'rms', 'url'. For a detailed understanding of each of these columns, take a look at the ",
-    html.A('USGS website', href='https://earthquake.usgs.gov/data/comcat/data-eventterms.php#mag')
-], className='note')
-    ])
-])
-'''
 @app.callback(
     Output('earthquake-map', 'figure'),
     [Input('date-picker-single', 'date'),
@@ -337,6 +327,28 @@ def update_map(selected_date, scaling):
         return generate_figure(data, include_size=False)  # Minimal visual means no size scaling
 
 
+@app.callback(
+    Output('earthquake-data-table', 'data'),
+    [Input('date-picker-single', 'date')]
+)
+def update_data_table(selected_date):
+    if not selected_date:
+        raise PreventUpdate
+    data = get_data(selected_date)
+    # Transform data into a list of dictionaries suitable for a DataTable
+    table_data = [
+        {'time': convert_timestamp(d['properties']['time']),  # Convert time for human readability
+         'magnitude': d['properties']['mag'],
+         'place': d['properties']['place'],
+         'longitude': d['geometry']['coordinates'][0],
+         'latitude': d['geometry']['coordinates'][1],
+         'type': d['properties']['type'],
+         'status': d['properties']['status'],
+         'url': d['properties']['url'],}
+        for d in data
+    ]
+    return table_data
+
 
 
 @app.callback(
@@ -349,6 +361,7 @@ def export_button_click(n_clicks, selected_date):
     if n_clicks is not None:
         csv_string = export_data_to_csv(selected_date)
         return dcc.send_string(csv_string, "earthquake_data.csv")
+    
 
 if __name__ == '__main__':
     app.run_server( port=8050, debug=True, dev_tools_ui=True)
