@@ -269,24 +269,23 @@ data_table_container = dbc.Card(
 
 info_container = dbc.Card(
     dbc.CardBody([
-        html.H4("Exported Data Documentation:", className='mb-3'),
+        html.H4("Exported Data Documentation", className='mb-3'),
         html.P([
-            "This dashboard utilizes data sourced from the ",
+            "This dashboard utilizes data from the ",
             html.A("ANSS Comprehensive Earthquake Catalog (ComCat)", href="https://earthquake.usgs.gov/data/comcat/", target="_blank"),
-            ", which includes various earthquake source parameters and products produced by contributing seismic networks."
+            ", maintained by the US Geological Survey (USGS). This catalog is a critical part of the National Earthquake Hazards Reduction Program (NEHRP), aimed at mitigating earthquake risks through collaborative efforts."
         ], className='mb-3'),
-        html.P([
-            "The ComCat database provides a comprehensive record of earthquake data globally, offering parameters such as hypocenters, magnitudes, and seismic phase data. It also includes derived products like moment tensor solutions and ShakeMaps."
-        ], className='mb-3'),
-        html.P([
-            "For detailed information on the data, definitions, and formats available, as well as guidelines on how to access and utilize these resources effectively, please refer to the ",
-            html.A("ComCat Documentation", href="https://earthquake.usgs.gov/data/comcat/", target="_blank"),
-            "."
-        ], className='mb-3'),
-        dbc.Button("Learn More", color="info", href="https://earthquake.usgs.gov/data/comcat/data-eventterms.php#mag", external_link=True)
+        html.P(
+            "The ComCat integrates contributions from numerous seismic networks, including the Alaska Earthquake Center, Southern California Seismic Network, and the Pacific Northwest Seismic Network, among others. These networks play a pivotal role in collecting and providing seismic data that underpins our understanding of earthquake dynamics and assists in emergency response planning."
+        , className='mb-3'),
+        html.P(
+            "For an in-depth understanding of the seismic data, including its sources and the collaborative framework of the seismic networks contributing to it, please refer to the linked ComCat documentation."
+        , className='mb-3'),
+        dbc.Button("Learn More", color="info", href="https://earthquake.usgs.gov/data/comcat/", external_link=True)
     ]),
     className="mb-3 shadow-sm p-3 bg-white rounded"
 )
+
 
 
 
