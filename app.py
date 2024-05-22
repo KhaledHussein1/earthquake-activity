@@ -10,7 +10,7 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from dash.dash_table import DataTable
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SPACELAB])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SANDSTONE])
 app.title = 'Earthquake Watch'
 
 config_file_path = 'config.json'
@@ -169,7 +169,7 @@ controls = dbc.Row([
     dbc.Col(
         dbc.Card(
             dbc.CardBody([
-                dbc.Button('Export Data', id='export-button', color='primary', className='w-100')
+                dbc.Button('Export Data', id='export-button', color='success', className='w-100')
             ]),
             className="shadow-sm"
         ),
